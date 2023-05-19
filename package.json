@@ -1,7 +1,7 @@
 {
   "name": "vue-class-to-vue2",
   "version": "1.0.6",
-  "description": "",
+  "description": "将 vue-class 版本转成 vue2",
   "main": "g.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -19,5 +19,13 @@
     "@vue/compiler-sfc": "^3.2.47",
     "prettier": "^2.8.8",
     "readline": "^1.3.0"
-  }
+  },
+  "keywords": [
+    "vue-class",
+    "vuex-class",
+    "vue-property-decorator",
+    "@Component",
+    "类组件",
+    "类vue"
+  ]
 }
