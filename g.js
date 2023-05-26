@@ -578,7 +578,7 @@ function createG() {
 
         if (!hasCreatedFlag && tempVueCreatedMethodAddBodyItemArr.length) {
           vueOwnMethodsArr.push(`created () {
-            ${tempVueCreatedMethodAddBodyItemArr.map((nl) => generate(nl).code)
+            ${tempVueCreatedMethodAddBodyItemArr.map((nl) => generate(nl).code).join('')
             }}`);
         }
       }
