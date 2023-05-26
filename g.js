@@ -70,19 +70,30 @@ function createG() {
 
   function batchAction(file) {
     const vueFileContent = fs.readFileSync(file, { encoding: "utf-8" });
-
-    const { descriptor } = parse(vueFileContent);
+    let descriptor;
+    try {
+      descriptor = parse(vueFileContent)?.descriptor;
+    } catch (error) {
+      console.log(error);
+      return console.log('你的代码暂不支持解析');
+    }
 
     const { script } = (descriptor.script && descriptor) || {
       script: { content: vueFileContent },
     };
 
     const { content } = script;
-    const astRes = astParser.parse(content, {
-      sourceType: "module",
-      plugins: ["decorators"],
-      errorRecovery: true,
-    });
+    let astRes;
+    try {
+      astRes = astParser.parse(content, {
+        sourceType: "module",
+        plugins: ["decorators", 'jsx'],
+        errorRecovery: true,
+      });
+    } catch (error) {
+      console.log(error);
+      return console.log('你的代码暂不支持解析');
+    }
 
     const classDefine = astRes.program.body.find(
       (ex) => ex.type === "ExportDefaultDeclaration",
@@ -116,9 +127,9 @@ function createG() {
 
     const importDefine = astRes.program;
 
-    // fs.writeFileSync("./classDefine.json", JSON.stringify(classDefine), {
-    //   encoding: "utf-8",
-    // });
+    fs.writeFileSync("./classDefine.json", JSON.stringify(classDefine), {
+      encoding: "utf-8",
+    });
     // fs.writeFileSync("./importDefine.json", JSON.stringify(importDefine), {
     //   encoding: "utf-8",
     // });
@@ -205,7 +216,15 @@ function createG() {
         .properties;
 
       // class body
+      function hasThisKeyword(value) {
+        // 检查字符串中是否包含 "ThisExpression"
 
+        if (value && JSON.stringify(value).includes("ThisExpression")) {
+          return true;
+        }
+
+        return false;
+      }
       function removeBraces(str) {
         const regex = /{([\s\S]*)}/;
         const match = str.match(regex);
@@ -280,7 +299,7 @@ function createG() {
 
           const decoratorName = calleeData?.name
             || /* @State("zoo") zoo */ calleeData.property
-              ?.name/* @globalModule.State("goodsSetting") goodsSetting */ || dex.name //@Log 自定义修饰符
+              ?.name/* @globalModule.State("goodsSetting") goodsSetting */ || dex.name; // @Log 自定义修饰符
 
           // 处理有修饰符的State、Mutation、Action、Getter
           if (vuexClassDecorator.includes(decoratorName) && argumentsDataZeroEl) {
@@ -498,24 +517,7 @@ function createG() {
       }
       btachClassGetOrSetToVueComputed();
 
-      // 批量处理Class 方法 筛选出vue生命周期和methods
-      function btachClassMethodsToVueMethods() {
-        classbody
-          .filter(
-            (ex) => ex.type === "ClassMethod" && !ex.decorators && ex.kind === "method",
-          )
-          .forEach((nx) => {
-            const tp = { ...nx };
-
-            delete tp.trailingComments;
-            if (vueMethodsStringSet.has(tp.key.name)) {
-              vueOwnMethodsArr.push(generate(tp).code);
-            } else {
-              vueArguments.methods.push(generate(tp).code);
-            }
-          });
-      }
-      btachClassMethodsToVueMethods();
+      const tempVueCreatedMethodAddBodyItemArr = [];
       // 批量处理ClassProperty
       function btachClassPropertyToVueData() {
         classbody
@@ -527,14 +529,45 @@ function createG() {
           )
           .forEach((nx) => {
             const { trailingComments } = filterComments(nx);
-
-            vueArguments.data.push(
-              `${nx.key.name}:${generate(nx.value).code || undefined
-              } ${trailingComments} `,
-            );
+            if (hasThisKeyword(nx.value)) { // 如过属性中含有this表达 将要放在 vue created函数里面
+              const temp = JSON.parse(JSON.stringify(nx));
+              temp.key.name = `this.${temp.key.name}`;
+              delete temp.trailingComments;
+              tempVueCreatedMethodAddBodyItemArr.push(temp);
+              vueArguments.data.push(
+                `${nx.key.name}:undefined`,
+              );
+            } else {
+              vueArguments.data.push(
+                `${nx.key.name}:${generate(nx.value).code || undefined
+                } ${trailingComments} `,
+              );
+            }
           });
       }
       btachClassPropertyToVueData();
+
+      // 批量处理Class 方法 筛选出vue生命周期和methods
+      function btachClassMethodsToVueMethods() {
+        classbody
+          .filter(
+            (ex) => ex.type === "ClassMethod" && !ex.decorators && ex.kind === "method",
+          )
+          .forEach((nx) => {
+            const tp = { ...nx };
+
+            delete tp.trailingComments;
+            if (vueMethodsStringSet.has(tp.key.name)) {
+              if (tp.key.name === 'created') {
+                tp.body.body = tp.body.body.concat(tempVueCreatedMethodAddBodyItemArr);
+              }
+              vueOwnMethodsArr.push(generate(tp).code);
+            } else {
+              vueArguments.methods.push(generate(tp).code);
+            }
+          });
+      }
+      btachClassMethodsToVueMethods();
 
       // 批量处理vue自有属性
       function btachVuePropsAction() {
