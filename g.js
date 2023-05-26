@@ -462,14 +462,21 @@ function createG() {
                 || key === "transitions"
                 || key === "filters"
                 || key === "data"
+                || key === "methods"
               ) {
                 // 会删除部分注释
                 const match = generate(propertiesOwn).code;
-                vueArguments[key].push(removeBraces(match));
+                const th = removeBraces(match);
+                if (th) {
+                  vueArguments[key].push(removeBraces(match));
+                }
               } else if (key === "props") {
                 if (propertiesOwn.value?.type === "ObjectExpression") {
                   const match = generate(propertiesOwn.value).code;
-                  vueArguments[key].push(removeBraces(match));
+                  const th = removeBraces(match);
+                  if (th) {
+                    vueArguments[key].push(removeBraces(match));
+                  }
                 } else if (
                   propertiesOwn.value?.type === "ArrayExpression"
                   && propertiesOwn.value?.elements.length
@@ -549,6 +556,7 @@ function createG() {
 
       // 批量处理Class 方法 筛选出vue生命周期和methods
       function btachClassMethodsToVueMethods() {
+        let hasCreatedFlag = false;
         classbody
           .filter(
             (ex) => ex.type === "ClassMethod" && !ex.decorators && ex.kind === "method",
@@ -559,6 +567,7 @@ function createG() {
             delete tp.trailingComments;
             if (vueMethodsStringSet.has(tp.key.name)) {
               if (tp.key.name === 'created') {
+                hasCreatedFlag = true;
                 tp.body.body = tp.body.body.concat(tempVueCreatedMethodAddBodyItemArr);
               }
               vueOwnMethodsArr.push(generate(tp).code);
@@ -566,6 +575,12 @@ function createG() {
               vueArguments.methods.push(generate(tp).code);
             }
           });
+
+        if (!hasCreatedFlag && tempVueCreatedMethodAddBodyItemArr.length) {
+          vueOwnMethodsArr.push(`created () {
+            ${tempVueCreatedMethodAddBodyItemArr.map((nl) => generate(nl).code)
+            }}`);
+        }
       }
       btachClassMethodsToVueMethods();
 
