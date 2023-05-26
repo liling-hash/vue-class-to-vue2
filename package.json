@@ -1,6 +1,6 @@
 {
   "name": "vue-class-to-vue2",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "将 vue-class 版本转成 vue2",
   "main": "g.js",
   "scripts": {
