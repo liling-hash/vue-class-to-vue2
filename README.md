@@ -12,9 +12,9 @@
 npm install
 
 #
-npx vue-class-to-vue2 -- src
+npx vue-class-to-vue2 src
 # or
-npx vue-class-to-vue2 -- App.vue
+npx vue-class-to-vue2 App.vue
 
 ```
 
