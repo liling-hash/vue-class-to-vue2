@@ -568,7 +568,7 @@ function createG() {
             if (vueMethodsStringSet.has(tp.key.name)) {
               if (tp.key.name === 'created') {
                 hasCreatedFlag = true;
-                tp.body.body = tp.body.body.concat(tempVueCreatedMethodAddBodyItemArr);
+                tp.body.body = tempVueCreatedMethodAddBodyItemArr.concat(tp.body.body);
               }
               vueOwnMethodsArr.push(generate(tp).code);
             } else {
