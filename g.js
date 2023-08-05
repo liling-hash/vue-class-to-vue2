@@ -377,6 +377,7 @@ function createG() {
               .concat(paramsValue)
               .filter((nl) => nl)
               .join(",");
+
             const emitTemplete = `
         ${leadingComments}
          ${exlKeyName} (${paramsValue || ""}) {

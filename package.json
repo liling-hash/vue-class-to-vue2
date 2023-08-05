@@ -8,7 +8,7 @@
     "g": "node ./g.js"
   },
   "bin": {
-    "vue-class-to-vue2": "./g.js"
+    "classvue-to-vue2": "./g.js"
   },
   "author": "",
   "license": "ISC",
